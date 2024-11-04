@@ -771,6 +771,8 @@ static bool ggml_metal_supports_op(const struct ggml_metal_context * ctx, const 
         case GGML_OP_POOL_1D:
         case GGML_OP_POOL_2D:
             return false;
+        case GGML_OP_PAD_REFLECT_1D:
+        case GGML_OP_UNFOLD_1D:
         case GGML_OP_UPSCALE:
         case GGML_OP_PAD:
         case GGML_OP_ARANGE:
@@ -2213,7 +2215,7 @@ static enum ggml_status ggml_metal_graph_compute(
                     } break;
                 case GGML_OP_GROUP_NORM:
                     {
-                        GGML_ASSERT(ne00 % 4 == 0);
+                        // GGML_ASSERT(ne00 % 4 == 0);
 
                         //float eps;
                         //memcpy(&eps, dst->op_params, sizeof(float));
@@ -2347,9 +2349,19 @@ static enum ggml_status ggml_metal_graph_compute(
 
                         [encoder dispatchThreadgroups:MTLSizeMake(ne01, ne02, ne03) threadsPerThreadgroup:MTLSizeMake(nth, 1, 1)];
                     } break;
+                case GGML_OP_CONV_TRANSPOSE_1D:
+                    {
+                        GGML_ASSERT(!"not implemented");
+                        break;
+                    }
+                case GGML_OP_PAD_REFLECT_1D:
+                    {
+                        GGML_ASSERT(!"not implemented");
+                        break;
+                    }
                 case GGML_OP_IM2COL:
                     {
-                        GGML_ASSERT(src0->type == GGML_TYPE_F16);
+                        // GGML_ASSERT(src0->type == GGML_TYPE_F16);
                         GGML_ASSERT(src1->type == GGML_TYPE_F32);
                         GGML_ASSERT( dst->type == GGML_TYPE_F16 || dst->type == GGML_TYPE_F32);
 
