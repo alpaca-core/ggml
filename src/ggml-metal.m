@@ -176,6 +176,9 @@ enum ggml_metal_kernel_type {
     GGML_METAL_KERNEL_TYPE_ROPE_F16,
     GGML_METAL_KERNEL_TYPE_IM2COL_F16,
     GGML_METAL_KERNEL_TYPE_IM2COL_F32,
+    GGML_METAL_KERNEL_TYPE_CONV_TRANSPOSE_1D_F32,
+    GGML_METAL_KERNEL_TYPE_PAD_REFLECT_1D_F32,
+    GGML_METAL_KERNEL_TYPE_UNFOLD_1D_F32,
     GGML_METAL_KERNEL_TYPE_UPSCALE_F32,
     GGML_METAL_KERNEL_TYPE_PAD_F32,
     GGML_METAL_KERNEL_TYPE_ARANGE_F32,
@@ -630,6 +633,9 @@ static struct ggml_metal_context * ggml_metal_init(int n_cb) {
         GGML_METAL_ADD_KERNEL(GGML_METAL_KERNEL_TYPE_ROPE_F16,                      rope_f16,                       true);
         GGML_METAL_ADD_KERNEL(GGML_METAL_KERNEL_TYPE_IM2COL_F16,                    im2col_f16,                     true);
         GGML_METAL_ADD_KERNEL(GGML_METAL_KERNEL_TYPE_IM2COL_F32,                    im2col_f32,                     true);
+        GGML_METAL_ADD_KERNEL(GGML_METAL_KERNEL_TYPE_CONV_TRANSPOSE_1D_F32,            conv_transpose_1d_f32,          true);
+        GGML_METAL_ADD_KERNEL(GGML_METAL_KERNEL_TYPE_PAD_REFLECT_1D_F32,            pad_reflect_1d_f32,             true);
+        GGML_METAL_ADD_KERNEL(GGML_METAL_KERNEL_TYPE_UNFOLD_1D_F32,                 unfold_1d_f32,                  true);
         GGML_METAL_ADD_KERNEL(GGML_METAL_KERNEL_TYPE_UPSCALE_F32,                   upscale_f32,                    true);
         GGML_METAL_ADD_KERNEL(GGML_METAL_KERNEL_TYPE_PAD_F32,                       pad_f32,                        true);
         GGML_METAL_ADD_KERNEL(GGML_METAL_KERNEL_TYPE_TIMESTEP_EMBEDDING_F32,        timestep_embedding_f32,         true);
@@ -771,6 +777,7 @@ static bool ggml_metal_supports_op(const struct ggml_metal_context * ctx, const 
         case GGML_OP_POOL_1D:
         case GGML_OP_POOL_2D:
             return false;
+        case GGML_OP_CONV_TRANSPOSE_1D:
         case GGML_OP_PAD_REFLECT_1D:
         case GGML_OP_UNFOLD_1D:
         case GGML_OP_UPSCALE:
@@ -2215,7 +2222,7 @@ static enum ggml_status ggml_metal_graph_compute(
                     } break;
                 case GGML_OP_GROUP_NORM:
                     {
-                        // GGML_ASSERT(ne00 % 4 == 0);
+                        GGML_ASSERT(ne00 % 4 == 0);
 
                         //float eps;
                         //memcpy(&eps, dst->op_params, sizeof(float));
@@ -2351,7 +2358,7 @@ static enum ggml_status ggml_metal_graph_compute(
                     } break;
                 case GGML_OP_IM2COL:
                     {
-                        // GGML_ASSERT(src0->type == GGML_TYPE_F16);
+                        GGML_ASSERT(src0->type == GGML_TYPE_F16);
                         GGML_ASSERT(src1->type == GGML_TYPE_F32);
                         GGML_ASSERT( dst->type == GGML_TYPE_F16 || dst->type == GGML_TYPE_F32);
 
@@ -2407,25 +2414,40 @@ static enum ggml_status ggml_metal_graph_compute(
                     } break;
                 case GGML_OP_PAD_REFLECT_1D:
                     {
-                        // const ggml_tensor * src0 = dst->src[0];
-                        // const float * src0_d = (const float *)src0->data;
-                        // float * dst_d = (float *)dst->data;
-                        // // cudaStream_t stream = ctx.stream();
+                        GGML_ASSERT(!"not implemented in the shader");
+                        GGML_ASSERT(src0->type == GGML_TYPE_F32);
 
-                        // GGML_ASSERT(src0->type == GGML_TYPE_F32);
-                        // GGML_ASSERT( dst->type == GGML_TYPE_F32);
+                        const id<MTLComputePipelineState> pipeline = ctx->kernels[GGML_METAL_KERNEL_TYPE_PAD_REFLECT_1D_F32].pipeline;
 
-                        // const int inp_size = src0->ne[0] * src0->ne[1];
-                        // const int dst_size = dst->ne[0] * dst->ne[1];
+                        [encoder setComputePipelineState:pipeline];
 
-                        // int num_blocks = (dst_size + CUDA_PAD_REFLECT_BLOCK_SIZE - 1) / CUDA_PAD_REFLECT_BLOCK_SIZE;
-                        // pad_reflect_1d_f32<<<num_blocks, CUDA_PAD_REFLECT_BLOCK_SIZE,0,stream>>>(x, dst, nb00, nb01, ne10, ne11,p0,p1, inp_size,dst_size);
-                        GGML_ASSERT(!"not implemented");
+                        const int nth = MIN((int) pipeline.maxTotalThreadsPerThreadgroup, ne0);
+                        [encoder dispatchThreadgroups:MTLSizeMake(ne1, ne2, ne3) threadsPerThreadgroup:MTLSizeMake(nth, 1, 1)];
                         break;
                     }
+                case GGML_OP_CONV_TRANSPOSE_1D:
+                    {
+                        GGML_ASSERT(!"not implemented in the shader");
+                        GGML_ASSERT(src0->type == GGML_TYPE_F32);
+
+                        const id<MTLComputePipelineState> pipeline = ctx->kernels[GGML_METAL_KERNEL_TYPE_UNFOLD_1D_F32].pipeline;
+
+                        [encoder setComputePipelineState:pipeline];
+
+                        const int nth = MIN((int) pipeline.maxTotalThreadsPerThreadgroup, ne0);
+                        [encoder dispatchThreadgroups:MTLSizeMake(ne1, ne2, ne3) threadsPerThreadgroup:MTLSizeMake(nth, 1, 1)];
+                    } break;
                 case GGML_OP_UNFOLD_1D:
                     {
-                        GGML_ASSERT(!"not implemented");
+                        GGML_ASSERT(!"not implemented in the shader");
+                        GGML_ASSERT(src0->type == GGML_TYPE_F32);
+
+                        const id<MTLComputePipelineState> pipeline = ctx->kernels[GGML_METAL_KERNEL_TYPE_UNFOLD_1D_F32].pipeline;
+
+                        [encoder setComputePipelineState:pipeline];
+
+                        const int nth = MIN((int) pipeline.maxTotalThreadsPerThreadgroup, ne0);
+                        [encoder dispatchThreadgroups:MTLSizeMake(ne1, ne2, ne3) threadsPerThreadgroup:MTLSizeMake(nth, 1, 1)];
                         break;
                     }
                 case GGML_OP_UPSCALE:
