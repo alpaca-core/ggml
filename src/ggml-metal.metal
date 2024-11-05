@@ -1827,8 +1827,8 @@ template [[host_name("kernel_rope_f32")]] kernel rope_t kernel_rope<float>;
 template [[host_name("kernel_rope_f16")]] kernel rope_t kernel_rope<half>;
 
 typedef void (im2col_t)(
-        device const float * x,
-        device        char * dst,
+        device const char * x,
+        device       char * dst,
         constant   int32_t & ofs0,
         constant   int32_t & ofs1,
         constant   int32_t & IW,
@@ -1845,10 +1845,10 @@ typedef void (im2col_t)(
         uint3 tpitg[[thread_position_in_threadgroup]],
         uint3   ntg[[threads_per_threadgroup]]);
 
-template <typename T>
+template <typename T, typename S>
 kernel void kernel_im2col(
-        device const float * x,
-        device        char * dst,
+        device const char * x,
+        device       char * dst,
         constant   int32_t & ofs0,
         constant   int32_t & ofs1,
         constant   int32_t & IW,
@@ -1871,18 +1871,24 @@ kernel void kernel_im2col(
         (tpitg[0] * tgpg[1] * tgpg[2] + tgpig[1] * tgpg[2] + tgpig[2]) * CHW +
         (tgpig[0] * (ntg[1] * ntg[2]) + tpitg[1] * ntg[2] + tpitg[2]);
 
+    device S * psrc = (device S *) (x);
     device T * pdst = (device T *) (dst);
 
     if (iih < 0 || iih >= IH || iiw < 0 || iiw >= IW) {
         pdst[offset_dst] = 0.0f;
     } else {
         const int32_t offset_src = tpitg[0] * ofs0 + tgpig[0] * ofs1;
-        pdst[offset_dst] = x[offset_src + iih * IW + iiw];
+        pdst[offset_dst] = psrc[offset_src + iih * IW + iiw];
     }
 }
 
-template [[host_name("kernel_im2col_f32")]] kernel im2col_t kernel_im2col<float>;
-template [[host_name("kernel_im2col_f16")]] kernel im2col_t kernel_im2col<half>;
+//template [[host_name("kernel_im2col_f32")]] kernel im2col_t kernel_im2col<float>;
+//template [[host_name("kernel_im2col_f16")]] kernel im2col_t kernel_im2col<half>;
+
+template [[host_name("kernel_im2col_f32_f32")]] kernel im2col_t kernel_im2col<float, float>;
+template [[host_name("kernel_im2col_f32_f16")]] kernel im2col_t kernel_im2col<float, half>;
+template [[host_name("kernel_im2col_f16_f32")]] kernel im2col_t kernel_im2col<half, float>;
+template [[host_name("kernel_im2col_f16_f16")]] kernel im2col_t kernel_im2col<half, half>;
 
 kernel void kernel_upscale_f32(
     device  const char * src0,
@@ -1927,6 +1933,135 @@ kernel void kernel_upscale_f32(
 
         dst_ptr[0] = src0_ptr[0];
     }
+}
+
+kernel void kernel_conv_transpose_1d_f32(
+    device  const char * src0,
+    device  const char * src1,
+    device        char * dst,
+    constant   int64_t & ne00,
+    constant   int64_t & ne01,
+    constant   int64_t & ne02,
+    constant   int64_t & ne03,
+    constant   int64_t & ne10,
+    constant   int64_t & ne11,
+    constant   int64_t & ne12,
+    constant   int64_t & ne13,
+    constant   int64_t & ne0,
+    constant   int64_t & ne1,
+    constant   int64_t & ne2,
+    constant   int64_t & ne3,
+    constant   int64_t& s0,
+    constant   int64_t& p0,
+    constant   int64_t& d0,
+    constant   int64_t& output_size,
+    uint tpig [[thread_position_in_grid]])
+{
+    // Calculate the global index for each thread
+    if (tpig >= output_size) {
+        return;
+    }
+
+    int out_index = tpig / ne0;
+    float accumulator = 0.0;
+
+    for (int c = 0; c < ne02; ++c) {
+        int idx = tpig % ne0;
+        int kernel_offset = (ne00 * ne01 * c) + (out_index * ne00);
+        int input_offset = ne10 * c;
+        int initial_weight_idx = idx > ne00 - 1 ? ne00 - 1 : idx;
+
+        for (int i = 0; i < ne10; ++i) {
+            if (!(idx >= i * s0 && idx < i * s0 + ne00)) {
+                continue;
+            }
+            int weight_idx = idx - i * s0;
+
+            float kernel_weight = src0[kernel_offset + weight_idx];
+            float input_value = src1[input_offset + i];
+            accumulator += kernel_weight * input_value;
+        }
+    }
+
+    dst[tpig] = accumulator;
+}
+
+kernel void kernel_pad_reflect_1d_f32(
+    device const char * x,
+    device       char* dst,
+    constant     int64_t& nb00,
+    constant     int64_t& nb01,
+    constant     int64_t& ne10,
+    constant     int64_t& ne11,
+    constant     int64_t& p0,
+    constant     int64_t& p1,
+    constant     int64_t& inp_size,
+    constant     int64_t& dst_size,
+    uint tpig [[thread_position_in_grid]]) {
+
+    // Check if thread index is within bounds of the output tensor
+    if (tpig >= ne10 * ne11) {
+        return;
+    }
+
+    // Calculate 2D coordinates (column and row) based on the 1D thread index
+    const int row_size = ne10;
+    int column_index = tpig % row_size;
+    const int row_index = tpig / row_size;
+
+    // Reflective padding logic
+    if (column_index < p0) {
+        column_index = p0 - column_index;  // Left padding (mirror left side)
+    } else if (column_index < row_size - p1) {
+        column_index = column_index - p0;  // No padding needed, direct mapping
+    } else {
+        column_index = (row_size - p1 - p0) - (p1 + 1 - (row_size - column_index)) - 1; // Right padding (mirror right side)
+    }
+
+    // Calculate the linear index in `x` based on adjusted column and row
+    int i00 = column_index;
+    int i01 = row_index;
+
+  // Use `reinterpret_cast` with byte offset for `device` pointers
+    const device float* x_offset = reinterpret_cast<const device float*>(
+        reinterpret_cast<const device char*>(x) + i01 * nb01 + i00 * nb00
+    );
+
+    // Assign the reflected value from `x` to `dst`
+    dst[tpig] = *x_offset;
+}
+
+kernel void kernel_unfold_1d_f32(
+    device const char * x,
+    device       char* dst,
+    constant int64_t& s,
+    constant int64_t& ne0,
+    constant int64_t& ne1,
+    constant int64_t& ne2,
+    constant int64_t& ne3,
+    constant int64_t& ne00,
+    constant int64_t& ne01,
+    constant int64_t& ne02,
+    constant int64_t& ne03,
+    uint tpig [[thread_position_in_grid]]) {
+
+    // Calculate global thread index
+    uint nidx = tpig;
+    if (nidx >= ne0 * ne1 * ne2 * ne3) {
+        return; // Out of bounds
+    }
+
+    // Calculate indices for each dimension
+    int i3 = nidx / (ne0 * ne1 * ne2);
+    int i2 = (nidx - i3 * (ne0 * ne1 * ne2)) / (ne0 * ne1);
+    int i1 = (nidx - i3 * (ne0 * ne1 * ne2) - i2 * (ne0)) / ne0;
+    int i0 = nidx - i3 * (ne0 * ne1 * ne2) - i2 * (ne0) - i1 * (ne0);
+
+    // Calculate the source index based on stride
+    int src_idx = i3 * (ne00 * ne01) + i2 * (ne00) + i1 * s + i0;
+
+    // Assign the value from the input tensor to the output tensor
+    dst[nidx] = x[src_idx];
 }
 
 kernel void kernel_pad_f32(
