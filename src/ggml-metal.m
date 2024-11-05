@@ -2349,16 +2349,6 @@ static enum ggml_status ggml_metal_graph_compute(
 
                         [encoder dispatchThreadgroups:MTLSizeMake(ne01, ne02, ne03) threadsPerThreadgroup:MTLSizeMake(nth, 1, 1)];
                     } break;
-                case GGML_OP_CONV_TRANSPOSE_1D:
-                    {
-                        GGML_ASSERT(!"not implemented");
-                        break;
-                    }
-                case GGML_OP_PAD_REFLECT_1D:
-                    {
-                        GGML_ASSERT(!"not implemented");
-                        break;
-                    }
                 case GGML_OP_IM2COL:
                     {
                         // GGML_ASSERT(src0->type == GGML_TYPE_F16);
@@ -2415,6 +2405,29 @@ static enum ggml_status ggml_metal_graph_compute(
 
                         [encoder dispatchThreadgroups:MTLSizeMake(IC, OH, OW) threadsPerThreadgroup:MTLSizeMake(N, KH, KW)];
                     } break;
+                case GGML_OP_PAD_REFLECT_1D:
+                    {
+                        // const ggml_tensor * src0 = dst->src[0];
+                        // const float * src0_d = (const float *)src0->data;
+                        // float * dst_d = (float *)dst->data;
+                        // // cudaStream_t stream = ctx.stream();
+
+                        // GGML_ASSERT(src0->type == GGML_TYPE_F32);
+                        // GGML_ASSERT( dst->type == GGML_TYPE_F32);
+
+                        // const int inp_size = src0->ne[0] * src0->ne[1];
+                        // const int dst_size = dst->ne[0] * dst->ne[1];
+
+                        // int num_blocks = (dst_size + CUDA_PAD_REFLECT_BLOCK_SIZE - 1) / CUDA_PAD_REFLECT_BLOCK_SIZE;
+                        // pad_reflect_1d_f32<<<num_blocks, CUDA_PAD_REFLECT_BLOCK_SIZE,0,stream>>>(x, dst, nb00, nb01, ne10, ne11,p0,p1, inp_size,dst_size);
+                        GGML_ASSERT(!"not implemented");
+                        break;
+                    }
+                case GGML_OP_UNFOLD_1D:
+                    {
+                        GGML_ASSERT(!"not implemented");
+                        break;
+                    }
                 case GGML_OP_UPSCALE:
                     {
                         GGML_ASSERT(src0->type == GGML_TYPE_F32);
