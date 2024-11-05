@@ -1957,11 +1957,6 @@ kernel void kernel_conv_transpose_1d_f32(
     constant   int64_t& output_size,
     uint tpig [[thread_position_in_grid]])
 {
-    // Calculate the global index for each thread
-    if (tpig >= output_size) {
-        return;
-    }
-
     int out_index = tpig / ne0;
     float accumulator = 0.0;
 
@@ -1969,7 +1964,6 @@ kernel void kernel_conv_transpose_1d_f32(
         int idx = tpig % ne0;
         int kernel_offset = (ne00 * ne01 * c) + (out_index * ne00);
         int input_offset = ne10 * c;
-        int initial_weight_idx = idx > ne00 - 1 ? ne00 - 1 : idx;
 
         for (int i = 0; i < ne10; ++i) {
             if (!(idx >= i * s0 && idx < i * s0 + ne00)) {
@@ -1998,12 +1992,6 @@ kernel void kernel_pad_reflect_1d_f32(
     constant     int64_t& inp_size,
     constant     int64_t& dst_size,
     uint tpig [[thread_position_in_grid]]) {
-
-    // Check if thread index is within bounds of the output tensor
-    if (tpig >= ne10 * ne11) {
-        return;
-    }
-
     // Calculate 2D coordinates (column and row) based on the 1D thread index
     const int row_size = ne10;
     int column_index = tpig % row_size;
@@ -2045,23 +2033,17 @@ kernel void kernel_unfold_1d_f32(
     constant int64_t& ne03,
     uint tpig [[thread_position_in_grid]]) {
 
-    // Calculate global thread index
-    uint nidx = tpig;
-    if (nidx >= ne0 * ne1 * ne2 * ne3) {
-        return; // Out of bounds
-    }
-
     // Calculate indices for each dimension
-    int i3 = nidx / (ne0 * ne1 * ne2);
-    int i2 = (nidx - i3 * (ne0 * ne1 * ne2)) / (ne0 * ne1);
-    int i1 = (nidx - i3 * (ne0 * ne1 * ne2) - i2 * (ne0)) / ne0;
-    int i0 = nidx - i3 * (ne0 * ne1 * ne2) - i2 * (ne0) - i1 * (ne0);
+    int i3 = tpig / (ne0 * ne1 * ne2);
+    int i2 = (tpig - i3 * (ne0 * ne1 * ne2)) / (ne0 * ne1);
+    int i1 = (tpig - i3 * (ne0 * ne1 * ne2) - i2 * (ne0)) / ne0;
+    int i0 = tpig - i3 * (ne0 * ne1 * ne2) - i2 * (ne0) - i1 * (ne0);
 
     // Calculate the source index based on stride
     int src_idx = i3 * (ne00 * ne01) + i2 * (ne00) + i1 * s + i0;
 
     // Assign the value from the input tensor to the output tensor
-    dst[nidx] = x[src_idx];
+    dst[tpig] = x[src_idx];
 }
 
 kernel void kernel_pad_f32(
