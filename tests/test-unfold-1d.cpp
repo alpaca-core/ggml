@@ -270,12 +270,12 @@ int main(void)
     printf("ggml_pad_ext (%d): %s\n", (int) ggml_nelements(pad_res_0), passed && (ggml_nelements(pad_res_0) == n_pad_test_0) ? "\033[32mPASSED\033[0m" : "\033[31mFAILED\033[0m");
 
     std::cout << "Expected: [";
-    for(int i = 0; i < n_pad_test_0; i++) {
+    for(int i = 0; i < n_pad_test_1; i++) {
         std::cout << expected_pad_reflect_1[i] << ", ";
     }
     std::cout << "]\n";
     std::cout << "Result:   [";
-    for(int i = 0; i < n_pad_test_0; i++) {
+    for(int i = 0; i < n_pad_test_1; i++) {
         std::cout << pad_data_1[i] << ", ";
     }
     std::cout << "]\n";

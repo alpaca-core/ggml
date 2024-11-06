@@ -1461,7 +1461,7 @@ struct test_pad_reflect_1d : public test_case {
         : type(type), ne_a(ne_a), pad_0(pad_0), pad_1(pad_1)  {}
 
     ggml_tensor * build_graph(ggml_context * ctx) override {
-        ggml_tensor * a = ggml_new_tensor(ctx, type, 2, ne_a.data());
+        ggml_tensor * a = ggml_new_tensor_1d(ctx, type, ne_a[0]);
         ggml_tensor * out = ggml_pad_reflect_1d(ctx, a, pad_0, pad_1);
         return out;
     }

@@ -1978,42 +1978,40 @@ kernel void kernel_conv_transpose_1d_f32(
 }
 
 kernel void kernel_pad_reflect_1d_f32(
-    device const char * x,
-    device       char* dst,
-    constant     int64_t& nb00,
-    constant     int64_t& nb01,
-    constant     int64_t& ne10,
-    constant     int64_t& ne11,
-    constant     int64_t& p0,
-    constant     int64_t& p1,
-    constant     int64_t& inp_size,
-    constant     int64_t& dst_size,
-    uint tpig [[thread_position_in_grid]]) {
-    // Calculate 2D coordinates (column and row) based on the 1D thread index
-    const int row_size = ne10;
-    int column_index = tpig % row_size;
-    const int row_index = tpig / row_size;
+    device    const char * src0,
+    device          char * dst,
+    constant     int64_t & nb00,
+    constant     int64_t & nb01,
+    constant     int64_t & ne0,
+    constant     int64_t & ne1,
+    constant     int64_t & p0,
+    constant     int64_t & p1,
+    uint3 tgpig[[threadgroup_position_in_grid]],
+    uint3 tpitg[[thread_position_in_threadgroup]],
+    uint3   ntg[[threads_per_threadgroup]]) {
 
-    // Reflective padding logic
-    if (column_index < p0) {
-        column_index = p0 - column_index;  // Left padding (mirror left side)
-    } else if (column_index < row_size - p1) {
-        column_index = column_index - p0;  // No padding needed, direct mapping
-    } else {
-        column_index = (row_size - p1 - p0) - (p1 + 1 - (row_size - column_index)) - 1; // Right padding (mirror right side)
+    const int row_size = ne0;
+
+    device const float * src0_ptr = (device const float *) (src0);
+    device       float * dst_ptr = (device        float *) (dst);
+
+    for (int i0 = tpitg.x; i0 < ne0; i0 += ntg.x){
+        int column_index = i0;
+        const int row_index = tpitg.y;
+
+        if (column_index < p0) {
+            column_index = p0 - column_index;  // Left padding (mirror left side)
+        } else if (column_index < row_size - p1) {
+            column_index = column_index - p0;  // No padding needed, direct mapping
+        } else {
+            column_index = (row_size - p1 - p0) - (p1 + 1 - (row_size - column_index)) - 1; // Right padding (mirror right side)
+        }
+
+        const int64_t src_idx = column_index;
+        const int64_t dst_idx = i0;
+
+        dst_ptr[dst_idx] = src0_ptr[src_idx];
     }
-
-    // Calculate the linear index in `x` based on adjusted column and row
-    int i00 = column_index;
-    int i01 = row_index;
-
-  // Use `reinterpret_cast` with byte offset for `device` pointers
-    const device float* x_offset = reinterpret_cast<const device float*>(
-        reinterpret_cast<const device char*>(x) + i01 * nb01 + i00 * nb00
-    );
-
-    // Assign the reflected value from `x` to `dst`
-    dst[tpig] = *x_offset;
 }
 
 kernel void kernel_unfold_1d_f32(

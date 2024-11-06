@@ -41,29 +41,16 @@ struct test_model {
 };
 
 void load_model(test_model & model, bool use_gpu = false) {
-    
-    
-
-
     float data[1024];
     for (int i = 0; i < 1024; ++i) {
         data[i] = (float)i;
     }
 
-
-
- 
     size_t buffer_size = 0;
     {
         buffer_size += 1024* ggml_type_size(GGML_TYPE_F32); // tensor a_0
         buffer_size += 2* ggml_type_size(GGML_TYPE_F32); // tensor a_0
         buffer_size += 10* ggml_type_size(GGML_TYPE_F32); // tensor a_0
-
-
-
-
-
-    
         buffer_size += 1024;
     }
 
@@ -113,8 +100,6 @@ void load_model(test_model & model, bool use_gpu = false) {
     model.a_0 = ggml_new_tensor_1d(model.ctx, GGML_TYPE_F32, 1024);
     model.a_1 = ggml_new_tensor_1d(model.ctx, GGML_TYPE_F32, 2);
     model.a_2 = ggml_new_tensor_1d(model.ctx, GGML_TYPE_F32, 10);
-
-
 
     // create a allocator
     ggml_tallocr alloc = ggml_tallocr_new(model.buffer);
@@ -297,6 +282,18 @@ int main(void)
 
     printf("\nPerforming test:\n");
 
+    const size_t elementsToPrint = 10;
+    std::cout << "Expected: [";
+    for(int i = 0; i < elementsToPrint; i++) {
+        std::cout << expected_pad_reflect_0[i] << ", ";
+    }
+    std::cout << "]\n";
+    std::cout << "Result:   [";
+    for(int i = 0; i < elementsToPrint; i++) {
+        std::cout << pad_reflect_1d_data_0[i] << ", ";
+    }
+    std::cout << "]\n";
+
     bool passed = true;
     for(int i = 0; i < n_pad_reflect_1d_test_0; i++) {
         if(
@@ -310,7 +307,18 @@ int main(void)
     }
 
     printf("ggml_pad_reflect_1d_transpose (%d): %s\n", (int) ggml_nelements(pad_reflect_1d_res_0), passed && (ggml_nelements(pad_reflect_1d_res_0) == n_pad_reflect_1d_test_0) ? "\033[32mPASSED\033[0m" : "\033[31mFAILED\033[0m");
-    
+
+    std::cout << "Expected: [";
+    for(int i = 0; i < elementsToPrint; i++) {
+        std::cout << expected_pad_reflect_1[i] << ", ";
+    }
+    std::cout << "]\n";
+    std::cout << "Result:   [";
+    for(int i = 0; i < elementsToPrint; i++) {
+        std::cout << pad_reflect_1d_data_1[i] << ", ";
+    }
+    std::cout << "]\n";
+
     passed = true;
     for(int i = 0; i < n_pad_reflect_1d_test_1; i++) {
         if(

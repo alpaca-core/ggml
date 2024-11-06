@@ -2435,21 +2435,17 @@ static enum ggml_status ggml_metal_graph_compute(
 
                         [encoder setComputePipelineState:pipeline];
 
-                        const int p0 = dst->op_params[0];
-                        const int p1 = dst->op_params[1];
-                        const int inp_size = src0->ne[0] * src0->ne[1];
-                        const int dst_size = dst->ne[0] * dst->ne[1];
+                        const int64_t p0 = dst->op_params[0];
+                        const int64_t p1 = dst->op_params[1];
 
                         [encoder setBuffer:id_src0  offset:offs_src0 atIndex:0];
                         [encoder setBuffer:id_dst   offset:offs_dst  atIndex:1];
                         [encoder setBytes:&nb00     length:sizeof(nb00) atIndex:2];
                         [encoder setBytes:&nb01     length:sizeof(nb01) atIndex:3];
-                        [encoder setBytes:&ne00     length:sizeof(ne00) atIndex:4];
-                        [encoder setBytes:&ne01     length:sizeof(ne01) atIndex:5];
+                        [encoder setBytes:&ne0      length:sizeof(ne0) atIndex:4];
+                        [encoder setBytes:&ne1      length:sizeof(ne1) atIndex:5];
                         [encoder setBytes:&p0       length:sizeof(p0) atIndex:6];
                         [encoder setBytes:&p1       length:sizeof(p1) atIndex:7];
-                        [encoder setBytes:&inp_size length:sizeof(inp_size) atIndex:8];
-                        [encoder setBytes:&dst_size length:sizeof(dst_size) atIndex:9];
 
                         const int nth = MIN((int) pipeline.maxTotalThreadsPerThreadgroup, ne0);
                         [encoder dispatchThreadgroups:MTLSizeMake(ne1, ne2, ne3) threadsPerThreadgroup:MTLSizeMake(nth, 1, 1)];
