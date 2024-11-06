@@ -2504,19 +2504,27 @@ static enum ggml_status ggml_metal_graph_compute(
                         [encoder setComputePipelineState:pipeline];
 
                         const int32_t * opts = (const int32_t *)dst->op_params;
-                        const int s = opts[1];
+                        const int64_t s = opts[1];
 
-                        [encoder setBuffer:id_src0  offset:offs_src0    atIndex:0];
-                        [encoder setBuffer:id_dst   offset:offs_dst     atIndex:1];
-                        [encoder setBytes:&s        length:sizeof(s)    atIndex:2];
-                        [encoder setBytes:&ne0      length:sizeof(ne0)  atIndex:3];
-                        [encoder setBytes:&ne1      length:sizeof(ne1)  atIndex:4];
-                        [encoder setBytes:&ne2      length:sizeof(ne2)  atIndex:5];
-                        [encoder setBytes:&ne3      length:sizeof(ne3)  atIndex:6];
-                        [encoder setBytes:&ne00     length:sizeof(ne00) atIndex:7];
-                        [encoder setBytes:&ne01     length:sizeof(ne01) atIndex:8];
-                        [encoder setBytes:&ne02     length:sizeof(ne02) atIndex:9];
-                        [encoder setBytes:&ne03     length:sizeof(ne03) atIndex:10];
+                        [encoder setBuffer:id_src0  offset:offs_src0        atIndex:0];
+                        [encoder setBuffer:id_dst   offset:offs_dst         atIndex:1];
+                        [encoder setBytes:&s        length:sizeof(s)        atIndex:2];
+                        [encoder setBytes:&ne00     length:sizeof(ne00)     atIndex:3];
+                        [encoder setBytes:&ne01     length:sizeof(ne01)     atIndex:4];
+                        [encoder setBytes:&ne02     length:sizeof(ne02)     atIndex:5];
+                        [encoder setBytes:&ne03     length:sizeof(ne03)     atIndex:6];
+                        [encoder setBytes:&nb00     length:sizeof(nb00)     atIndex:7];
+                        [encoder setBytes:&nb01     length:sizeof(nb01)     atIndex:8];
+                        [encoder setBytes:&nb02     length:sizeof(nb02)     atIndex:9];
+                        [encoder setBytes:&nb03     length:sizeof(nb03)     atIndex:10];
+                        [encoder setBytes:&ne0      length:sizeof(ne0)      atIndex:11];
+                        [encoder setBytes:&ne1      length:sizeof(ne1)      atIndex:12];
+                        [encoder setBytes:&ne2      length:sizeof(ne2)      atIndex:13];
+                        [encoder setBytes:&ne3      length:sizeof(ne3)      atIndex:14];
+                        [encoder setBytes:&nb0      length:sizeof(nb0)      atIndex:15];
+                        [encoder setBytes:&nb1      length:sizeof(nb1)      atIndex:16];
+                        [encoder setBytes:&nb2      length:sizeof(nb2)      atIndex:17];
+                        [encoder setBytes:&nb3      length:sizeof(nb3)      atIndex:18];
 
                         const int nth = MIN((int) pipeline.maxTotalThreadsPerThreadgroup, ne0);
                         [encoder dispatchThreadgroups:MTLSizeMake(ne1, ne2, ne3) threadsPerThreadgroup:MTLSizeMake(nth, 1, 1)];

@@ -42,24 +42,15 @@ struct test_model {
 };
 
 void load_model(test_model & model, bool use_gpu = false) {
-    
-    
-
-
     float data[1024];
     for (int i = 0; i < 1024; ++i) {
         data[i] = (float)i;
     }
 
-
-
- 
     size_t buffer_size = 0;
     {
         buffer_size += 2 * 6 * ggml_type_size(GGML_TYPE_F32); // tensor a_0
-
         buffer_size += 2 * 2 * 4 * ggml_type_size(GGML_TYPE_F32); // tensor a_1
-
         buffer_size += 1024;
     }
 
@@ -109,7 +100,6 @@ void load_model(test_model & model, bool use_gpu = false) {
     model.a_0 = ggml_new_tensor_2d(model.ctx, GGML_TYPE_F32, 6,2);
     model.a_1 = ggml_new_tensor_3d(model.ctx, GGML_TYPE_F32, 4,2,2);
 
-
     // create a allocator
     ggml_tallocr alloc = ggml_tallocr_new(model.buffer);
 
@@ -132,8 +122,6 @@ void load_model(test_model & model, bool use_gpu = false) {
     } else {
         ggml_backend_tensor_set(model.a_1, data, 0, ggml_nbytes(model.a_1));
     }
-
-
 }
 
 struct ggml_cgraph * build_graph(const test_model& model) {
@@ -252,6 +240,20 @@ int main(void)
     float expected_pad_reflect_1[n_pad_test_1] = {0.0,1.0,1.0,2.0,2.0,3.0,4.0,5.0,5.0,6.0,6.0,7.0,8.0,9.0,9.0,10.0,10.0,11.0,12.0,13.0,13.0,14.0,14.0,15.0};
 
     printf("\nPerforming test:\n");
+    std::cout << "Expected: [";
+    for(int i = 0; i < n_pad_test_0; i++) {
+        std::cout << expected_pad_reflect_0[i] << ", ";
+    }
+    std::cout << "]\n";
+    std::cout << "Result:   [";
+    for(int i = 0; i < n_pad_test_0; i++) {
+        std::cout << pad_data_0[i] << ", ";
+    }
+    std::cout << "]\n";
+
+
+
+    printf("\nPerforming test:\n");
 
     bool passed = true;
     for(int i = 0; i < n_pad_test_0; i++) {
@@ -267,7 +269,16 @@ int main(void)
 
     printf("ggml_pad_ext (%d): %s\n", (int) ggml_nelements(pad_res_0), passed && (ggml_nelements(pad_res_0) == n_pad_test_0) ? "\033[32mPASSED\033[0m" : "\033[31mFAILED\033[0m");
 
-
+    std::cout << "Expected: [";
+    for(int i = 0; i < n_pad_test_0; i++) {
+        std::cout << expected_pad_reflect_1[i] << ", ";
+    }
+    std::cout << "]\n";
+    std::cout << "Result:   [";
+    for(int i = 0; i < n_pad_test_0; i++) {
+        std::cout << pad_data_1[i] << ", ";
+    }
+    std::cout << "]\n";
     passed = true;
     for(int i = 0; i < n_pad_test_1; i++) {
         if(

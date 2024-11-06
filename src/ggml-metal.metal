@@ -1882,9 +1882,6 @@ kernel void kernel_im2col(
     }
 }
 
-//template [[host_name("kernel_im2col_f32")]] kernel im2col_t kernel_im2col<float>;
-//template [[host_name("kernel_im2col_f16")]] kernel im2col_t kernel_im2col<half>;
-
 template [[host_name("kernel_im2col_f32_f32")]] kernel im2col_t kernel_im2col<float, float>;
 template [[host_name("kernel_im2col_f32_f16")]] kernel im2col_t kernel_im2col<float, half>;
 template [[host_name("kernel_im2col_f16_f32")]] kernel im2col_t kernel_im2col<half, float>;
@@ -2020,30 +2017,42 @@ kernel void kernel_pad_reflect_1d_f32(
 }
 
 kernel void kernel_unfold_1d_f32(
-    device const char * x,
-    device       char* dst,
-    constant int64_t& s,
-    constant int64_t& ne0,
-    constant int64_t& ne1,
-    constant int64_t& ne2,
-    constant int64_t& ne3,
-    constant int64_t& ne00,
-    constant int64_t& ne01,
-    constant int64_t& ne02,
-    constant int64_t& ne03,
-    uint tpig [[thread_position_in_grid]]) {
+    device   const char * src0,
+    device         char * dst,
+    constant    int64_t & s,
+    constant    int64_t & ne00,
+    constant    int64_t & ne01,
+    constant    int64_t & ne02,
+    constant    int64_t & ne03,
+    constant    int64_t & nb00,
+    constant    int64_t & nb01,
+    constant    int64_t & nb02,
+    constant    int64_t & nb03,
+    constant    int64_t & ne0,
+    constant    int64_t & ne1,
+    constant    int64_t & ne2,
+    constant    int64_t & ne3,
+    constant    int64_t & nb0,
+    constant    int64_t & nb1,
+    constant    int64_t & nb2,
+    constant    int64_t & nb3,
+    uint3 tgpig[[threadgroup_position_in_grid]],
+    uint3 tpitg[[thread_position_in_threadgroup]],
+    uint3   ntg[[threads_per_threadgroup]]) {
 
-    // Calculate indices for each dimension
-    int i3 = tpig / (ne0 * ne1 * ne2);
-    int i2 = (tpig - i3 * (ne0 * ne1 * ne2)) / (ne0 * ne1);
-    int i1 = (tpig - i3 * (ne0 * ne1 * ne2) - i2 * (ne0)) / ne0;
-    int i0 = tpig - i3 * (ne0 * ne1 * ne2) - i2 * (ne0) - i1 * (ne0);
+    const int64_t i3 = tgpig.z;
+    const int64_t i2 = tgpig.y;
+    const int64_t i1 = tgpig.x;
 
-    // Calculate the source index based on stride
-    int src_idx = i3 * (ne00 * ne01) + i2 * (ne00) + i1 * s + i0;
+    device const float * src0_ptr = (device const float *) (src0);
+    device       float * dst_ptr = (device        float *) (dst);
 
-    // Assign the value from the input tensor to the output tensor
-    dst[tpig] = x[src_idx];
+    for (int i0 = tpitg.x; i0 < ne0; i0 += ntg.x){
+        const int64_t src_idx = i3 *(ne00*ne01) + i2 * (ne00) + i1*s + i0;
+        const int64_t dst_idx = i3*(ne0*ne1*ne2) + i2*(ne0*ne1) + i1*ne0 + i0;
+
+        dst_ptr[dst_idx] = src0_ptr[src_idx];
+    }
 }
 
 kernel void kernel_pad_f32(
