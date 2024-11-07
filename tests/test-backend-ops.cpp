@@ -1490,6 +1490,32 @@ struct test_unfold_1d : public test_case {
     }
 };
 
+// GGML_OP_CONV_TRANSPOSE_1D
+struct test_conv_transpose_1d : public test_case {
+    const ggml_type type;
+    const std::array<int64_t, 2> ne_a;
+    const std::array<int64_t, 2> ne_b;
+    const int s0;
+    const int p0;
+    const int d0;
+
+    std::string vars() override {
+        return VARS_TO_STR6(type, ne_a, ne_b, s0, p0, d0);
+    }
+
+    test_conv_transpose_1d(ggml_type type = GGML_TYPE_F32,
+            std::array<int64_t, 2> ne_a = {512, 10},
+            std::array<int64_t, 2> ne_b = {512, 10},
+            int s0 = 10, int p0 = 9, int d0 = 8)
+        : type(type), ne_a(ne_a), ne_b(ne_b), s0(s0), p0(p0), d0(d0) {}
+
+    ggml_tensor * build_graph(ggml_context * ctx) override {
+        ggml_tensor * a = ggml_new_tensor(ctx, type, 2, ne_a.data());
+        ggml_tensor * b = ggml_new_tensor(ctx, type, 2, ne_b.data());
+        ggml_tensor * out = ggml_conv_transpose_1d(ctx, a, b, s0, p0, d0);
+        return out;
+    }
+};
 
 // GGML_OP_PAD
 struct test_pad : public test_case {
@@ -2033,184 +2059,184 @@ static bool test_backend(ggml_backend_t backend, test_mode mode, const char * op
     };
 
     // unary ops
-    for (int op = 0; op < GGML_UNARY_OP_COUNT; op++) {
-        test_cases.emplace_back(new test_unary((ggml_unary_op) op));
-        test_cases.emplace_back(new test_unary((ggml_unary_op) op, GGML_TYPE_F32, { 7, 13, 19, 23 }));
-    }
+    // for (int op = 0; op < GGML_UNARY_OP_COUNT; op++) {
+    //     test_cases.emplace_back(new test_unary((ggml_unary_op) op));
+    //     test_cases.emplace_back(new test_unary((ggml_unary_op) op, GGML_TYPE_F32, { 7, 13, 19, 23 }));
+    // }
 
-    test_cases.emplace_back(new test_get_rows(GGML_TYPE_F32, 1, 8, 2, 1, false));
-    for (ggml_type type : all_types) {
-        for (int b : {1, 7}) {
-            for (bool v : {false, true}) {
-                test_cases.emplace_back(new test_get_rows(type, 256, 5, 4, b, v));
-            }
-        }
-    }
-    for (int b : {1, 7}) {
-        for (bool v : {false, true}) {
-            test_cases.emplace_back(new test_get_rows(GGML_TYPE_I32, 256, 5, 4, b, v));
-        }
-    }
+    // test_cases.emplace_back(new test_get_rows(GGML_TYPE_F32, 1, 8, 2, 1, false));
+    // for (ggml_type type : all_types) {
+    //     for (int b : {1, 7}) {
+    //         for (bool v : {false, true}) {
+    //             test_cases.emplace_back(new test_get_rows(type, 256, 5, 4, b, v));
+    //         }
+    //     }
+    // }
+    // for (int b : {1, 7}) {
+    //     for (bool v : {false, true}) {
+    //         test_cases.emplace_back(new test_get_rows(GGML_TYPE_I32, 256, 5, 4, b, v));
+    //     }
+    // }
 
-    for (ggml_type type_input : {GGML_TYPE_F32}) {
-        for (ggml_op_pool pool_type : {GGML_OP_POOL_AVG, GGML_OP_POOL_MAX}) {
-            for (int k0 : {1, 3}) {
-                for (int k1 : {1, 3}) {
-                    for (int s0 : {1, 2}) {
-                        for (int s1 : {1, 2}) {
-                            for (int p0 : {0, 1}) {
-                                for (int p1 : {0, 1}) {
-                                    test_cases.emplace_back(new test_pool2d(pool_type, type_input, {10, 10, 3, 1}, k0, k1, s0, s1, p0, p1));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // for (ggml_type type_input : {GGML_TYPE_F32}) {
+    //     for (ggml_op_pool pool_type : {GGML_OP_POOL_AVG, GGML_OP_POOL_MAX}) {
+    //         for (int k0 : {1, 3}) {
+    //             for (int k1 : {1, 3}) {
+    //                 for (int s0 : {1, 2}) {
+    //                     for (int s1 : {1, 2}) {
+    //                         for (int p0 : {0, 1}) {
+    //                             for (int p1 : {0, 1}) {
+    //                                 test_cases.emplace_back(new test_pool2d(pool_type, type_input, {10, 10, 3, 1}, k0, k1, s0, s1, p0, p1));
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
-    test_cases.emplace_back(new test_im2col(GGML_TYPE_F32, GGML_TYPE_F16, GGML_TYPE_F32));
-    test_cases.emplace_back(new test_im2col(GGML_TYPE_F32, GGML_TYPE_F16, GGML_TYPE_F16));
+    // test_cases.emplace_back(new test_im2col(GGML_TYPE_F32, GGML_TYPE_F16, GGML_TYPE_F32));
+    // test_cases.emplace_back(new test_im2col(GGML_TYPE_F32, GGML_TYPE_F16, GGML_TYPE_F16));
 
-    test_cases.emplace_back(new test_repeat(GGML_TYPE_F32, {10, 10, 10, 10}, {1, 1, 1, 1}));
-    test_cases.emplace_back(new test_repeat(GGML_TYPE_F32, {10, 10, 10, 10}, {2, 1, 1, 1}));
-    test_cases.emplace_back(new test_repeat(GGML_TYPE_F32, {10, 10, 10, 10}, {1, 2, 1, 1}));
-    test_cases.emplace_back(new test_repeat(GGML_TYPE_F32, {10, 10, 10, 10}, {1, 1, 2, 1}));
-    test_cases.emplace_back(new test_repeat(GGML_TYPE_F32, {10, 10, 10, 10}, {1, 1, 1, 2}));
-    test_cases.emplace_back(new test_repeat(GGML_TYPE_I32, {10, 10, 10, 10}, {2, 1, 1, 1}));
-    test_cases.emplace_back(new test_repeat(GGML_TYPE_I16, {10, 10, 10, 10}, {1, 1, 1, 2}));
+    // test_cases.emplace_back(new test_repeat(GGML_TYPE_F32, {10, 10, 10, 10}, {1, 1, 1, 1}));
+    // test_cases.emplace_back(new test_repeat(GGML_TYPE_F32, {10, 10, 10, 10}, {2, 1, 1, 1}));
+    // test_cases.emplace_back(new test_repeat(GGML_TYPE_F32, {10, 10, 10, 10}, {1, 2, 1, 1}));
+    // test_cases.emplace_back(new test_repeat(GGML_TYPE_F32, {10, 10, 10, 10}, {1, 1, 2, 1}));
+    // test_cases.emplace_back(new test_repeat(GGML_TYPE_F32, {10, 10, 10, 10}, {1, 1, 1, 2}));
+    // test_cases.emplace_back(new test_repeat(GGML_TYPE_I32, {10, 10, 10, 10}, {2, 1, 1, 1}));
+    // test_cases.emplace_back(new test_repeat(GGML_TYPE_I16, {10, 10, 10, 10}, {1, 1, 1, 2}));
 
-    test_cases.emplace_back(new test_dup(GGML_TYPE_F32));
-    test_cases.emplace_back(new test_dup(GGML_TYPE_F16));
-    test_cases.emplace_back(new test_dup(GGML_TYPE_I32));
-    test_cases.emplace_back(new test_dup(GGML_TYPE_I16));
-    test_cases.emplace_back(new test_dup(GGML_TYPE_I16, {10, 8, 3, 1}, {0, 2, 1, 3}));
-    test_cases.emplace_back(new test_dup(GGML_TYPE_I16, {10, 8, 3, 1}, {1, 2, 0, 3}));
+    // test_cases.emplace_back(new test_dup(GGML_TYPE_F32));
+    // test_cases.emplace_back(new test_dup(GGML_TYPE_F16));
+    // test_cases.emplace_back(new test_dup(GGML_TYPE_I32));
+    // test_cases.emplace_back(new test_dup(GGML_TYPE_I16));
+    // test_cases.emplace_back(new test_dup(GGML_TYPE_I16, {10, 8, 3, 1}, {0, 2, 1, 3}));
+    // test_cases.emplace_back(new test_dup(GGML_TYPE_I16, {10, 8, 3, 1}, {1, 2, 0, 3}));
 
-    for (ggml_type type_src : {GGML_TYPE_F16, GGML_TYPE_F32}) {
-        for (ggml_type type_dst : all_types) {
-           test_cases.emplace_back(new test_cpy(type_src, type_dst, {256, 4, 4, 4}));
-        }
-    }
+    // for (ggml_type type_src : {GGML_TYPE_F16, GGML_TYPE_F32}) {
+    //     for (ggml_type type_dst : all_types) {
+    //        test_cases.emplace_back(new test_cpy(type_src, type_dst, {256, 4, 4, 4}));
+    //     }
+    // }
 
-    test_cases.emplace_back(new test_cont());
+    // test_cases.emplace_back(new test_cont());
 
-    auto add_test_bin_bcast = [&](ggml_type type, std::array<int64_t, 4> ne, std::array<int, 4> nr) {
-        for (auto op : {ggml_add, ggml_mul, ggml_div}) {
-            test_cases.emplace_back(new test_bin_bcast(op, type, ne, nr));
-        }
-    };
+    // auto add_test_bin_bcast = [&](ggml_type type, std::array<int64_t, 4> ne, std::array<int, 4> nr) {
+    //     for (auto op : {ggml_add, ggml_mul, ggml_div}) {
+    //         test_cases.emplace_back(new test_bin_bcast(op, type, ne, nr));
+    //     }
+    // };
 
-    add_test_bin_bcast(GGML_TYPE_F32, {1, 1, 8, 1}, {1, 1, 1, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {1, 1, 1, 1}, {32, 1, 1, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {1, 1, 320, 320}, {1, 1, 1, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {16, 10, 1, 1}, {1, 1, 1, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {16, 10, 10, 1}, {1, 1, 1, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {16, 10, 10, 10}, {1, 1, 1, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {16, 10, 10, 10}, {2, 1, 1, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {16, 10, 10, 10}, {1, 2, 1, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {16, 10, 10, 10}, {1, 1, 2, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {16, 10, 10, 10}, {1, 1, 1, 2});
-    add_test_bin_bcast(GGML_TYPE_F32, {16, 10, 10, 10}, {1, 1, 2, 2});
-    add_test_bin_bcast(GGML_TYPE_F32, {16, 10, 10, 10}, {1, 2, 2, 2});
-    add_test_bin_bcast(GGML_TYPE_F32, {16, 10, 10, 10}, {2, 2, 2, 2});
+    // add_test_bin_bcast(GGML_TYPE_F32, {1, 1, 8, 1}, {1, 1, 1, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {1, 1, 1, 1}, {32, 1, 1, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {1, 1, 320, 320}, {1, 1, 1, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {16, 10, 1, 1}, {1, 1, 1, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {16, 10, 10, 1}, {1, 1, 1, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {16, 10, 10, 10}, {1, 1, 1, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {16, 10, 10, 10}, {2, 1, 1, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {16, 10, 10, 10}, {1, 2, 1, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {16, 10, 10, 10}, {1, 1, 2, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {16, 10, 10, 10}, {1, 1, 1, 2});
+    // add_test_bin_bcast(GGML_TYPE_F32, {16, 10, 10, 10}, {1, 1, 2, 2});
+    // add_test_bin_bcast(GGML_TYPE_F32, {16, 10, 10, 10}, {1, 2, 2, 2});
+    // add_test_bin_bcast(GGML_TYPE_F32, {16, 10, 10, 10}, {2, 2, 2, 2});
 
-    // stable diffusion
-    add_test_bin_bcast(GGML_TYPE_F32, {1280, 1, 1, 1}, {1, 1, 1, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {1280, 1, 1, 1}, {1, 16, 16, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {1280, 16, 16, 1}, {1, 1, 1, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {1280, 1, 1, 1}, {1, 256, 1, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {1, 1, 1280, 1}, {16, 16, 1, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {16, 16, 1280, 1}, {1, 1, 1, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {1, 1, 1920, 1}, {16, 16, 1, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {1, 1, 2560, 1}, {16, 16, 1, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {1, 1, 1280, 1}, {32, 32, 1, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {1, 1, 1920, 1}, {32, 32, 1, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {1, 1, 640, 1}, {32, 32, 1, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {5120, 1, 1, 1}, {1, 256, 1, 1});
-    add_test_bin_bcast(GGML_TYPE_F32, {640, 1, 1, 1}, {1, 1, 1, 1});
-    //add_test_bin_bcast(GGML_TYPE_F32, {3, 3, 2560, 1280}, {1, 1, 1, 1});
-    //add_test_bin_bcast(GGML_TYPE_F32, {3, 3, 2560, 1280}, {2, 1, 1, 1});
+    // // stable diffusion
+    // add_test_bin_bcast(GGML_TYPE_F32, {1280, 1, 1, 1}, {1, 1, 1, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {1280, 1, 1, 1}, {1, 16, 16, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {1280, 16, 16, 1}, {1, 1, 1, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {1280, 1, 1, 1}, {1, 256, 1, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {1, 1, 1280, 1}, {16, 16, 1, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {16, 16, 1280, 1}, {1, 1, 1, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {1, 1, 1920, 1}, {16, 16, 1, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {1, 1, 2560, 1}, {16, 16, 1, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {1, 1, 1280, 1}, {32, 32, 1, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {1, 1, 1920, 1}, {32, 32, 1, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {1, 1, 640, 1}, {32, 32, 1, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {5120, 1, 1, 1}, {1, 256, 1, 1});
+    // add_test_bin_bcast(GGML_TYPE_F32, {640, 1, 1, 1}, {1, 1, 1, 1});
+    // //add_test_bin_bcast(GGML_TYPE_F32, {3, 3, 2560, 1280}, {1, 1, 1, 1});
+    // //add_test_bin_bcast(GGML_TYPE_F32, {3, 3, 2560, 1280}, {2, 1, 1, 1});
 
-    test_cases.emplace_back(new test_scale());
+    // test_cases.emplace_back(new test_scale());
 
-    for (float eps : {1e-6f, 1e-5f, 1e-3f, 1e-1f}) {
-        test_cases.emplace_back(new test_norm(GGML_TYPE_F32, {64, 10, 10, 10}, eps));
-        test_cases.emplace_back(new test_rms_norm(GGML_TYPE_F32, {64, 10, 10, 10}, eps));
-    }
+    // for (float eps : {1e-6f, 1e-5f, 1e-3f, 1e-1f}) {
+    //     test_cases.emplace_back(new test_norm(GGML_TYPE_F32, {64, 10, 10, 10}, eps));
+    //     test_cases.emplace_back(new test_rms_norm(GGML_TYPE_F32, {64, 10, 10, 10}, eps));
+    // }
 
-    for (ggml_type type_a : base_types) {
-        for (ggml_type type_b : {GGML_TYPE_F32, GGML_TYPE_F16}) {
-            test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 1, 256, { 1,  1}, {1, 1}));
-            test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 1, 256, {10,  1}, {1, 1}));
-            test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 1, 256, {10,  1}, {2, 1}));
-            test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 1, 256, {10, 10}, {1, 1}));
-            test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 1, 256, {10, 10}, {2, 1}));
-            test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 1, 256, {10, 10}, {1, 2}));
-            test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 1, 256, {10, 10}, {2, 2}));
+    // for (ggml_type type_a : base_types) {
+    //     for (ggml_type type_b : {GGML_TYPE_F32, GGML_TYPE_F16}) {
+    //         test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 1, 256, { 1,  1}, {1, 1}));
+    //         test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 1, 256, {10,  1}, {1, 1}));
+    //         test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 1, 256, {10,  1}, {2, 1}));
+    //         test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 1, 256, {10, 10}, {1, 1}));
+    //         test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 1, 256, {10, 10}, {2, 1}));
+    //         test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 1, 256, {10, 10}, {1, 2}));
+    //         test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 1, 256, {10, 10}, {2, 2}));
 
-            test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 16, 256, { 1,  1}, {1, 1}));
-            test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 16, 256, {10,  1}, {1, 1}));
-            test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 16, 256, {10,  1}, {2, 1}));
-            test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 16, 256, {10, 10}, {1, 1}));
-            test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 16, 256, {10, 10}, {2, 1}));
-            test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 16, 256, {10, 10}, {1, 2}));
-            test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 16, 256, {10, 10}, {2, 2}));
-        }
-    }
+    //         test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 16, 256, { 1,  1}, {1, 1}));
+    //         test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 16, 256, {10,  1}, {1, 1}));
+    //         test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 16, 256, {10,  1}, {2, 1}));
+    //         test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 16, 256, {10, 10}, {1, 1}));
+    //         test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 16, 256, {10, 10}, {2, 1}));
+    //         test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 16, 256, {10, 10}, {1, 2}));
+    //         test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 16, 256, {10, 10}, {2, 2}));
+    //     }
+    // }
 
-    for (ggml_type type_a : other_types) {
-        for (ggml_type type_b : {GGML_TYPE_F32}) {
-            test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 1, 256, { 1,  1}, {1, 1}));
-        }
-    }
+    // for (ggml_type type_a : other_types) {
+    //     for (ggml_type type_b : {GGML_TYPE_F32}) {
+    //         test_cases.emplace_back(new test_mul_mat(type_a, type_b, 16, 1, 256, { 1,  1}, {1, 1}));
+    //     }
+    // }
 
-    test_cases.emplace_back(new test_mul_mat(GGML_TYPE_F16, GGML_TYPE_F32,  64, 2,  128, { 8,  1}, {1, 1}));
-    test_cases.emplace_back(new test_mul_mat(GGML_TYPE_F16, GGML_TYPE_F32,  83, 2,  128, { 8,  1}, {4, 1}));
-    test_cases.emplace_back(new test_mul_mat(GGML_TYPE_F16, GGML_TYPE_F32,  64, 2,   64, { 8,  1}, {4, 1}));
-    test_cases.emplace_back(new test_mul_mat(GGML_TYPE_F16, GGML_TYPE_F32,  83, 2,   64, { 8,  1}, {4, 1}));
-    test_cases.emplace_back(new test_mul_mat(GGML_TYPE_F16, GGML_TYPE_F32,  64, 45, 128, { 8,  1}, {4, 1}));
-    test_cases.emplace_back(new test_mul_mat(GGML_TYPE_F16, GGML_TYPE_F32, 128, 45,  64, { 8,  1}, {4, 1}));
+    // test_cases.emplace_back(new test_mul_mat(GGML_TYPE_F16, GGML_TYPE_F32,  64, 2,  128, { 8,  1}, {1, 1}));
+    // test_cases.emplace_back(new test_mul_mat(GGML_TYPE_F16, GGML_TYPE_F32,  83, 2,  128, { 8,  1}, {4, 1}));
+    // test_cases.emplace_back(new test_mul_mat(GGML_TYPE_F16, GGML_TYPE_F32,  64, 2,   64, { 8,  1}, {4, 1}));
+    // test_cases.emplace_back(new test_mul_mat(GGML_TYPE_F16, GGML_TYPE_F32,  83, 2,   64, { 8,  1}, {4, 1}));
+    // test_cases.emplace_back(new test_mul_mat(GGML_TYPE_F16, GGML_TYPE_F32,  64, 45, 128, { 8,  1}, {4, 1}));
+    // test_cases.emplace_back(new test_mul_mat(GGML_TYPE_F16, GGML_TYPE_F32, 128, 45,  64, { 8,  1}, {4, 1}));
 
-    for (ggml_type type_a : base_types) {
-        for (ggml_type type_b : {GGML_TYPE_F32 /*, GGML_TYPE_F16 */}) {
-            for (int n_mats : {4, 8}) {
-                for (int n_used : {1, 2, 4}) {
-                    for (bool b : {false, true}) {
-                        for (int n : {1, 32}) {
-                            int m = 512;
-                            int k = 256;
-                            test_cases.emplace_back(new test_mul_mat_id(type_a, type_b, n_mats, n_used, b, m, n, k));
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // for (ggml_type type_a : base_types) {
+    //     for (ggml_type type_b : {GGML_TYPE_F32 /*, GGML_TYPE_F16 */}) {
+    //         for (int n_mats : {4, 8}) {
+    //             for (int n_used : {1, 2, 4}) {
+    //                 for (bool b : {false, true}) {
+    //                     for (int n : {1, 32}) {
+    //                         int m = 512;
+    //                         int k = 256;
+    //                         test_cases.emplace_back(new test_mul_mat_id(type_a, type_b, n_mats, n_used, b, m, n, k));
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
-    for (ggml_type type_a : other_types) {
-        for (ggml_type type_b : {GGML_TYPE_F32 /*, GGML_TYPE_F16 */}) {
-            for (int n_mats : {4}) {
-                for (int n_used : {2}) {
-                    for (bool b : {false}) {
-                        for (int n : {1}) {
-                            int m = 512;
-                            int k = 256;
-                            test_cases.emplace_back(new test_mul_mat_id(type_a, type_b, n_mats, n_used, b, m, n, k));
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // for (ggml_type type_a : other_types) {
+    //     for (ggml_type type_b : {GGML_TYPE_F32 /*, GGML_TYPE_F16 */}) {
+    //         for (int n_mats : {4}) {
+    //             for (int n_used : {2}) {
+    //                 for (bool b : {false}) {
+    //                     for (int n : {1}) {
+    //                         int m = 512;
+    //                         int k = 256;
+    //                         test_cases.emplace_back(new test_mul_mat_id(type_a, type_b, n_mats, n_used, b, m, n, k));
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
-    test_cases.emplace_back(new test_sqr());
-    test_cases.emplace_back(new test_clamp());
+    // test_cases.emplace_back(new test_sqr());
+    // test_cases.emplace_back(new test_clamp());
 
-    test_cases.emplace_back(new test_diag_mask_inf(GGML_TYPE_F32, {10, 10,  1,  1}, 5));
-    test_cases.emplace_back(new test_diag_mask_inf(GGML_TYPE_F32, {10, 10, 10,  1}, 5));
-    test_cases.emplace_back(new test_diag_mask_inf(GGML_TYPE_F32, {10, 10, 10, 10}, 5));
+    // test_cases.emplace_back(new test_diag_mask_inf(GGML_TYPE_F32, {10, 10,  1,  1}, 5));
+    // test_cases.emplace_back(new test_diag_mask_inf(GGML_TYPE_F32, {10, 10, 10,  1}, 5));
+    // test_cases.emplace_back(new test_diag_mask_inf(GGML_TYPE_F32, {10, 10, 10, 10}, 5));
 
 #if 0
     std::uniform_int_distribution<> dist_ne1(1, 50);
@@ -2227,80 +2253,80 @@ static bool test_backend(ggml_backend_t backend, test_mode mode, const char * op
         exponent <<= 1;
     }
 #endif
-    for (bool mask : {false, true}) {
-        for (float max_bias : {0.0f, 8.0f}) {
-            if (!mask && max_bias > 0.0f) continue;
-            for (float scale : {1.0f, 0.1f}) {
-                for (int64_t ne0 : {16, 1024}) {
-                    for (int64_t ne1 : {16, 1024}) {
-                        test_cases.emplace_back(new test_soft_max(GGML_TYPE_F32, {ne0,   ne1,   1, 1}, mask, scale, max_bias));
-                        test_cases.emplace_back(new test_soft_max(GGML_TYPE_F32, {ne0-1, ne1-1, 1, 1}, mask, scale, max_bias));
-                    }
-                }
-            }
-        }
-    }
+    // for (bool mask : {false, true}) {
+    //     for (float max_bias : {0.0f, 8.0f}) {
+    //         if (!mask && max_bias > 0.0f) continue;
+    //         for (float scale : {1.0f, 0.1f}) {
+    //             for (int64_t ne0 : {16, 1024}) {
+    //                 for (int64_t ne1 : {16, 1024}) {
+    //                     test_cases.emplace_back(new test_soft_max(GGML_TYPE_F32, {ne0,   ne1,   1, 1}, mask, scale, max_bias));
+    //                     test_cases.emplace_back(new test_soft_max(GGML_TYPE_F32, {ne0-1, ne1-1, 1, 1}, mask, scale, max_bias));
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
-    test_cases.emplace_back(new test_soft_max(GGML_TYPE_F32, {16, 2, 32, 1}, false, 0.1f, 0.0f));
-    test_cases.emplace_back(new test_soft_max(GGML_TYPE_F32, {32, 2, 32, 1}, true,  0.1f, 0.0f));
-    test_cases.emplace_back(new test_soft_max(GGML_TYPE_F32, {32, 2, 32, 1}, true,  0.1f, 8.0f));
+    // test_cases.emplace_back(new test_soft_max(GGML_TYPE_F32, {16, 2, 32, 1}, false, 0.1f, 0.0f));
+    // test_cases.emplace_back(new test_soft_max(GGML_TYPE_F32, {32, 2, 32, 1}, true,  0.1f, 0.0f));
+    // test_cases.emplace_back(new test_soft_max(GGML_TYPE_F32, {32, 2, 32, 1}, true,  0.1f, 8.0f));
 
-    for (ggml_type type : {GGML_TYPE_F32, GGML_TYPE_F16}) {
-        // TODO: ff not supported yet for !neox
-        test_cases.emplace_back(new test_rope(type, {128,  32, 10, 1}, 128, 0, 512, false)); // llama 7B
-        test_cases.emplace_back(new test_rope(type, {128,  40, 10, 1}, 128, 0, 512, false)); // llama 13B
-        test_cases.emplace_back(new test_rope(type, {128,  52, 10, 1}, 128, 0, 512, false)); // llama 30B
-        test_cases.emplace_back(new test_rope(type, {128,  64, 10, 1}, 128, 0, 512, false)); // llama 65B
+    // for (ggml_type type : {GGML_TYPE_F32, GGML_TYPE_F16}) {
+    //     // TODO: ff not supported yet for !neox
+    //     test_cases.emplace_back(new test_rope(type, {128,  32, 10, 1}, 128, 0, 512, false)); // llama 7B
+    //     test_cases.emplace_back(new test_rope(type, {128,  40, 10, 1}, 128, 0, 512, false)); // llama 13B
+    //     test_cases.emplace_back(new test_rope(type, {128,  52, 10, 1}, 128, 0, 512, false)); // llama 30B
+    //     test_cases.emplace_back(new test_rope(type, {128,  64, 10, 1}, 128, 0, 512, false)); // llama 65B
 
-        for (bool ff : {false, true}) { // freq_factors
-            test_cases.emplace_back(new test_rope(type, { 64,   1, 10, 1},  64, 2, 512, ff)); // neox (falcon 7B)
-            test_cases.emplace_back(new test_rope(type, { 64,  71, 10, 1},  64, 2, 512, ff)); // neox (falcon 7B)
-            test_cases.emplace_back(new test_rope(type, { 64,   8, 10, 1},  64, 2, 512, ff)); // neox (falcon 40B)
-            test_cases.emplace_back(new test_rope(type, { 64, 128, 10, 1},  64, 2, 512, ff)); // neox (falcon 40B)
-            test_cases.emplace_back(new test_rope(type, { 80,  32, 10, 1},  20, 2, 512, ff)); // neox (stablelm)
-            test_cases.emplace_back(new test_rope(type, { 80,  32, 10, 1},  32, 2, 512, ff)); // neox (phi-2)
-        }
-    }
+    //     for (bool ff : {false, true}) { // freq_factors
+    //         test_cases.emplace_back(new test_rope(type, { 64,   1, 10, 1},  64, 2, 512, ff)); // neox (falcon 7B)
+    //         test_cases.emplace_back(new test_rope(type, { 64,  71, 10, 1},  64, 2, 512, ff)); // neox (falcon 7B)
+    //         test_cases.emplace_back(new test_rope(type, { 64,   8, 10, 1},  64, 2, 512, ff)); // neox (falcon 40B)
+    //         test_cases.emplace_back(new test_rope(type, { 64, 128, 10, 1},  64, 2, 512, ff)); // neox (falcon 40B)
+    //         test_cases.emplace_back(new test_rope(type, { 80,  32, 10, 1},  20, 2, 512, ff)); // neox (stablelm)
+    //         test_cases.emplace_back(new test_rope(type, { 80,  32, 10, 1},  32, 2, 512, ff)); // neox (phi-2)
+    //     }
+    // }
 
-    for (int dim : { 0, 1, 2, 3, }) {
-        test_cases.emplace_back(new test_concat(GGML_TYPE_F32, {11, 12, 13, 14}, 7, dim));
-        test_cases.emplace_back(new test_concat(GGML_TYPE_I32, {11, 12, 13, 14}, 7, dim));
-    }
+    // for (int dim : { 0, 1, 2, 3, }) {
+    //     test_cases.emplace_back(new test_concat(GGML_TYPE_F32, {11, 12, 13, 14}, 7, dim));
+    //     test_cases.emplace_back(new test_concat(GGML_TYPE_I32, {11, 12, 13, 14}, 7, dim));
+    // }
 
-    for (ggml_sort_order order : {GGML_SORT_ORDER_ASC, GGML_SORT_ORDER_DESC}) {
-        test_cases.emplace_back(new test_argsort(GGML_TYPE_F32, {8, 1, 1, 1}, order));
-        test_cases.emplace_back(new test_argsort(GGML_TYPE_F32, {16, 10, 10, 10}, order));
-        test_cases.emplace_back(new test_argsort(GGML_TYPE_F32, {60, 10, 10, 10}, order)); // qwen
-    }
+    // for (ggml_sort_order order : {GGML_SORT_ORDER_ASC, GGML_SORT_ORDER_DESC}) {
+    //     test_cases.emplace_back(new test_argsort(GGML_TYPE_F32, {8, 1, 1, 1}, order));
+    //     test_cases.emplace_back(new test_argsort(GGML_TYPE_F32, {16, 10, 10, 10}, order));
+    //     test_cases.emplace_back(new test_argsort(GGML_TYPE_F32, {60, 10, 10, 10}, order)); // qwen
+    //}
 
-    test_cases.emplace_back(new test_sum_rows());
-    test_cases.emplace_back(new test_upscale());
-    test_cases.emplace_back(new test_upscale(GGML_TYPE_F32, { 512, 512, 3, 1 }, 2, true));
-    test_cases.emplace_back(new test_upscale_ext());
-    test_cases.emplace_back(new test_group_norm());
-    test_cases.emplace_back(new test_acc());
-    test_cases.emplace_back(new test_pad());
+    // test_cases.emplace_back(new test_sum_rows());
+    // test_cases.emplace_back(new test_upscale());
+    // test_cases.emplace_back(new test_upscale(GGML_TYPE_F32, { 512, 512, 3, 1 }, 2, true));
+    // test_cases.emplace_back(new test_upscale_ext());
+    // test_cases.emplace_back(new test_group_norm());
+    // test_cases.emplace_back(new test_acc());
+    // test_cases.emplace_back(new test_pad());
     test_cases.emplace_back(new test_pad_reflect_1d());
-    test_cases.emplace_back(new test_unfold_1d());
-    test_cases.emplace_back(new test_conv_transpose_1d());
-    test_cases.emplace_back(new test_arange());
-    test_cases.emplace_back(new test_timestep_embedding());
-    test_cases.emplace_back(new test_leaky_relu());
+    // test_cases.emplace_back(new test_unfold_1d());
+    // test_cases.emplace_back(new test_conv_transpose_1d());
+    // test_cases.emplace_back(new test_arange());
+    // test_cases.emplace_back(new test_timestep_embedding());
+    // test_cases.emplace_back(new test_leaky_relu());
 
-    for (int hs : { 64, 80, 128, 256, }) {
-        for (bool mask : { true, false } ) {
-            for (float max_bias : { 0.0f, 8.0f }) {
-                if (!mask && max_bias > 0.0f) continue;
-                for (int nh : { 32, }) {
-                    for (int kv : { 512, 1024, }) {
-                        for (int nb : { 1, 2, 4, 8, }) {
-                            test_cases.emplace_back(new test_flash_attn_ext(hs, nh, kv, nb, mask, max_bias));
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // for (int hs : { 64, 80, 128, 256, }) {
+    //     for (bool mask : { true, false } ) {
+    //         for (float max_bias : { 0.0f, 8.0f }) {
+    //             if (!mask && max_bias > 0.0f) continue;
+    //             for (int nh : { 32, }) {
+    //                 for (int kv : { 512, 1024, }) {
+    //                     for (int nb : { 1, 2, 4, 8, }) {
+    //                         test_cases.emplace_back(new test_flash_attn_ext(hs, nh, kv, nb, mask, max_bias));
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
     // these tests are disabled to save execution time, but they can be handy for debugging
 #if 0

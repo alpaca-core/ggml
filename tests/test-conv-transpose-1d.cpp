@@ -87,10 +87,6 @@ void load_model(test_model & model, bool use_gpu = false) {
         buffer_size += 16 * 32 * 32 * ggml_type_size(GGML_TYPE_F32); // tensor a_4
         buffer_size += 197 * 32* ggml_type_size(GGML_TYPE_F32); // tensor b_4
 
-
-
-
-    
         buffer_size += 1024;
     }
 
@@ -140,7 +136,6 @@ void load_model(test_model & model, bool use_gpu = false) {
     model.a_0 = ggml_new_tensor_1d(model.ctx, GGML_TYPE_F32, 3);
     model.b_0 = ggml_new_tensor_1d(model.ctx, GGML_TYPE_F32, 2);
 
-
     model.a_1 = ggml_new_tensor_3d(model.ctx, GGML_TYPE_F32, 3,1,2);
     model.b_1 = ggml_new_tensor_2d(model.ctx, GGML_TYPE_F32, 3,2);
 
@@ -152,7 +147,6 @@ void load_model(test_model & model, bool use_gpu = false) {
 
     model.a_4 = ggml_new_tensor_3d(model.ctx, GGML_TYPE_F32, 16,32,32);
     model.b_4 = ggml_new_tensor_2d(model.ctx, GGML_TYPE_F32, 197,32);
-
 
     // create a allocator
     ggml_tallocr alloc = ggml_tallocr_new(model.buffer);
@@ -166,7 +160,6 @@ void load_model(test_model & model, bool use_gpu = false) {
     } else {
         ggml_backend_tensor_set(model.a_0, adata_0, 0, ggml_nbytes(model.a_0));
     }
-
 
     // alloc memory
     ggml_tallocr_alloc(&alloc, model.a_1);
@@ -198,7 +191,6 @@ void load_model(test_model & model, bool use_gpu = false) {
         ggml_backend_tensor_set(model.a_3, data, 0, ggml_nbytes(model.a_3));
     }
 
-
       // alloc memory
     ggml_tallocr_alloc(&alloc, model.a_4);
 
@@ -208,8 +200,6 @@ void load_model(test_model & model, bool use_gpu = false) {
     } else {
         ggml_backend_tensor_set(model.a_4, data, 0, ggml_nbytes(model.a_4));
     }
-
-
 
     // alloc memory
     ggml_tallocr_alloc(&alloc, model.b_0);
@@ -446,10 +436,6 @@ int main(void)
 
     ggml_backend_tensor_get(conv1d_transpose_res_1, conv1d_transpose_data_1, 0, ggml_nbytes(conv1d_transpose_res_1));
 
-
-
-
-
     const int n_conv_transpose_1d_test_1 = 5;
 
     float expected_conv1d_1[n_conv_transpose_1d_test_1] =
@@ -578,6 +564,16 @@ int main(void)
 
     printf("\nPerforming test:\n");
 
+    std::cout << "Expected: [";
+    for(int i = 0; i < n_conv_transpose_1d_test_0; i++) {
+        std::cout << expected_conv1d_0[i] << ", ";
+    }
+    std::cout << "]\n";
+    std::cout << "Result:   [";
+    for(int i = 0; i < n_conv_transpose_1d_test_0; i++) {
+        std::cout << conv1d_transpose_data_0[i] << ", ";
+    }
+    std::cout << "]\n";
     bool passed = true;
     for(int i = 0; i < n_conv_transpose_1d_test_0; i++) {
         if(
@@ -591,7 +587,17 @@ int main(void)
     }
 
     printf("ggml_conv_1d_transpose (%d): %s\n", (int) ggml_nelements(conv1d_transpose_res_0), passed && (ggml_nelements(conv1d_transpose_res_0) == n_conv_transpose_1d_test_0) ? "\033[32mPASSED\033[0m" : "\033[31mFAILED\033[0m");
-    
+
+    std::cout << "Expected: [";
+    for(int i = 0; i < n_conv_transpose_1d_test_1; i++) {
+        std::cout << expected_conv1d_1[i] << ", ";
+    }
+    std::cout << "]\n";
+    std::cout << "Result:   [";
+    for(int i = 0; i < n_conv_transpose_1d_test_1; i++) {
+        std::cout << conv1d_transpose_data_1[i] << ", ";
+    }
+    std::cout << "]\n";
     passed =true;
     for(int i = 0; i < n_conv_transpose_1d_test_1; i++) {
         if(
@@ -605,6 +611,16 @@ int main(void)
 
     printf("ggml_conv_1d_transpose (%d): %s\n", (int) ggml_nelements(conv1d_transpose_res_1), passed && (ggml_nelements(conv1d_transpose_res_1) == n_conv_transpose_1d_test_1) ? "\033[32mPASSED\033[0m" : "\033[31mFAILED\033[0m");
 
+    std::cout << "Expected: [";
+    for(int i = 0; i < n_conv_transpose_1d_test_2; i++) {
+        std::cout << expected_conv1d_2[i] << ", ";
+    }
+    std::cout << "]\n";
+    std::cout << "Result:   [";
+    for(int i = 0; i < n_conv_transpose_1d_test_2; i++) {
+        std::cout << conv1d_transpose_data_2[i] << ", ";
+    }
+    std::cout << "]\n";
     passed =true;
     for(int i = 0; i < n_conv_transpose_1d_test_2; i++) {
         if(
@@ -618,7 +634,16 @@ int main(void)
 
     printf("ggml_conv_1d_transpose (%d): %s\n", (int) ggml_nelements(conv1d_transpose_res_2), passed && (ggml_nelements(conv1d_transpose_res_2) == n_conv_transpose_1d_test_2) ? "\033[32mPASSED\033[0m" : "\033[31mFAILED\033[0m");
 
-
+    std::cout << "Expected: [";
+    for(int i = 0; i < n_conv_transpose_1d_test_3; i++) {
+        std::cout << expected_conv1d_3[i] << ", ";
+    }
+    std::cout << "]\n";
+    std::cout << "Result:   [";
+    for(int i = 0; i < n_conv_transpose_1d_test_3; i++) {
+        std::cout << conv1d_transpose_data_3[i] << ", ";
+    }
+    std::cout << "]\n";
     passed =true;
     for(int i = 0; i < n_conv_transpose_1d_test_3; i++) {
         if(
@@ -632,6 +657,16 @@ int main(void)
 
     printf("ggml_conv_1d_transpose (%d): %s\n", (int) ggml_nelements(conv1d_transpose_res_3), passed && (ggml_nelements(conv1d_transpose_res_3) == n_conv_transpose_1d_test_3) ? "\033[32mPASSED\033[0m" : "\033[31mFAILED\033[0m");
 
+    std::cout << "Expected: [";
+    for(int i = 0; i < n_conv_transpose_1d_test_4; i++) {
+        std::cout << expected_conv1d_4[i] << ", ";
+    }
+    std::cout << "]\n";
+    std::cout << "Result:   [";
+    for(int i = 0; i < n_conv_transpose_1d_test_4; i++) {
+        std::cout << conv1d_transpose_data_4[i] << ", ";
+    }
+    std::cout << "]\n";
     passed =true;
     for(int i = 0; i < n_conv_transpose_1d_test_4; i++) {
         if(
@@ -645,6 +680,16 @@ int main(void)
 
     printf("ggml_conv_1d_transpose (%d): %s\n", (int) ggml_nelements(conv1d_transpose_res_4), passed && (ggml_nelements(conv1d_transpose_res_4) == n_conv_transpose_1d_test_4) ? "\033[32mPASSED\033[0m" : "\033[31mFAILED\033[0m");
 
+    std::cout << "Expected: [";
+    for(int i = 0; i < n_conv_transpose_1d_test_5; i++) {
+        std::cout << expected_conv1d_5[i] << ", ";
+    }
+    std::cout << "]\n";
+    std::cout << "Result:   [";
+    for(int i = 0; i < n_conv_transpose_1d_test_5; i++) {
+        std::cout << conv1d_transpose_data_5[i] << ", ";
+    }
+    std::cout << "]\n";
     passed =true;
     for(int i = 0; i < n_conv_transpose_1d_test_5; i++) {
         if(
@@ -658,6 +703,16 @@ int main(void)
 
     printf("ggml_conv_1d_transpose (%d): %s\n", (int) ggml_nelements(conv1d_transpose_res_5), passed && (ggml_nelements(conv1d_transpose_res_5) == n_conv_transpose_1d_test_5) ? "\033[32mPASSED\033[0m" : "\033[31mFAILED\033[0m");
 
+    std::cout << "Expected: [";
+    for(int i = 0; i < n_conv_transpose_1d_test_6; i++) {
+        std::cout << expected_conv1d_6[i] << ", ";
+    }
+    std::cout << "]\n";
+    std::cout << "Result:   [";
+    for(int i = 0; i < n_conv_transpose_1d_test_6; i++) {
+        std::cout << conv1d_transpose_data_6[i] << ", ";
+    }
+    std::cout << "]\n";
     passed =true;
     for(int i = 0; i < n_conv_transpose_1d_test_6; i++) {
         if(

@@ -1948,33 +1948,43 @@ kernel void kernel_conv_transpose_1d_f32(
     constant   int64_t & ne1,
     constant   int64_t & ne2,
     constant   int64_t & ne3,
-    constant   int64_t& s0,
-    constant   int64_t& p0,
-    constant   int64_t& d0,
-    constant   int64_t& output_size,
-    uint tpig [[thread_position_in_grid]])
-{
-    int out_index = tpig / ne0;
-    float accumulator = 0.0;
+    constant   int64_t & s0,
+    constant   int64_t & p0,
+    constant   int64_t & d0,
+    constant   int64_t & processed_ne0,
+    uint3 tgpig[[threadgroup_position_in_grid]],
+    uint3  tgpg[[threadgroups_per_grid]],
+    uint3 tpitg[[thread_position_in_threadgroup]],
+    uint3   ntg[[threads_per_threadgroup]]) {
 
-    for (int c = 0; c < ne02; ++c) {
-        int idx = tpig % ne0;
-        int kernel_offset = (ne00 * ne01 * c) + (out_index * ne00);
-        int input_offset = ne10 * c;
+    device const float * src0_ptr = (device const float *) (src0);
+    device const float * src1_ptr = (device const float *) (src1);
+    device       float * dst_ptr = (device        float *) (dst);
 
-        for (int i = 0; i < ne10; ++i) {
-            if (!(idx >= i * s0 && idx < i * s0 + ne00)) {
-                continue;
+    for (int i0 = tpitg.x; i0 < ne0; i0 += ntg.x){
+        float accumulator = 0.0;
+        int global_index = tpitg.x + tgpig.x * ntg.x + processed_ne0 * tgpg.x;
+        int out_index = global_index / ne0;
+
+        for (int c = 0; c < ne02; ++c) {
+            int idx = global_index % ne0;
+            int kernel_offset = (ne00 * ne01 * c) + (out_index * ne00);
+            int input_offset = ne10 * c;
+
+            for (int i = 0; i < ne10; ++i) {
+                if (!(idx >= i * s0 && idx < i * s0 + ne00)) {
+                    continue;
+                }
+                int weight_idx = idx - i * s0;
+
+                float kernel_weight = src0_ptr[kernel_offset + weight_idx];
+                float input_value = src1_ptr[input_offset + i];
+                accumulator += kernel_weight * input_value;
             }
-            int weight_idx = idx - i * s0;
-
-            float kernel_weight = src0[kernel_offset + weight_idx];
-            float input_value = src1[input_offset + i];
-            accumulator += kernel_weight * input_value;
         }
-    }
 
-    dst[tpig] = accumulator;
+        dst_ptr[global_index] = accumulator;
+    }
 }
 
 kernel void kernel_pad_reflect_1d_f32(
