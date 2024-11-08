@@ -2430,6 +2430,8 @@ static enum ggml_status ggml_metal_graph_compute(
                     {
                         GGML_ASSERT(src0->type == GGML_TYPE_F32);
                         GGML_ASSERT( dst->type == GGML_TYPE_F32);
+                        GGML_ASSERT(ne2 == 1);
+                        GGML_ASSERT(ne3 == 1);
 
                         const id<MTLComputePipelineState> pipeline = ctx->kernels[GGML_METAL_KERNEL_TYPE_PAD_REFLECT_1D_F32].pipeline;
 
@@ -2440,15 +2442,15 @@ static enum ggml_status ggml_metal_graph_compute(
 
                         [encoder setBuffer:id_src0  offset:offs_src0 atIndex:0];
                         [encoder setBuffer:id_dst   offset:offs_dst  atIndex:1];
-                        [encoder setBytes:&nb00     length:sizeof(nb00) atIndex:2];
-                        [encoder setBytes:&nb01     length:sizeof(nb01) atIndex:3];
+                        [encoder setBytes:&ne00     length:sizeof(ne00) atIndex:2];
+                        [encoder setBytes:&ne01     length:sizeof(ne01) atIndex:3];
                         [encoder setBytes:&ne0      length:sizeof(ne0) atIndex:4];
                         [encoder setBytes:&ne1      length:sizeof(ne1) atIndex:5];
                         [encoder setBytes:&p0       length:sizeof(p0) atIndex:6];
                         [encoder setBytes:&p1       length:sizeof(p1) atIndex:7];
 
                         const int nth = MIN((int) pipeline.maxTotalThreadsPerThreadgroup, ne0);
-                        [encoder dispatchThreadgroups:MTLSizeMake(ne1, ne2, ne3) threadsPerThreadgroup:MTLSizeMake(nth, 1, 1)];
+                        [encoder dispatchThreadgroups:MTLSizeMake(ne1, 1, 1) threadsPerThreadgroup:MTLSizeMake(nth, 1, 1)];
                         break;
                     }
                 case GGML_OP_CONV_TRANSPOSE_1D:

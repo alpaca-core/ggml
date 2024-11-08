@@ -1990,8 +1990,8 @@ kernel void kernel_conv_transpose_1d_f32(
 kernel void kernel_pad_reflect_1d_f32(
     device    const char * src0,
     device          char * dst,
-    constant     int64_t & nb00,
-    constant     int64_t & nb01,
+    constant     int64_t & ne00,
+    constant     int64_t & ne01,
     constant     int64_t & ne0,
     constant     int64_t & ne1,
     constant     int64_t & p0,
@@ -2007,7 +2007,7 @@ kernel void kernel_pad_reflect_1d_f32(
 
     for (int i0 = tpitg.x; i0 < ne0; i0 += ntg.x){
         int column_index = i0;
-        const int row_index = tpitg.y;
+        const int64_t dst_idx = i0 + ne0*tgpig.x;
 
         if (column_index < p0) {
             column_index = p0 - column_index;  // Left padding (mirror left side)
@@ -2017,10 +2017,10 @@ kernel void kernel_pad_reflect_1d_f32(
             column_index = (row_size - p1 - p0) - (p1 + 1 - (row_size - column_index)) - 1; // Right padding (mirror right side)
         }
 
-        const int64_t src_idx = column_index;
-        const int64_t dst_idx = i0;
+        const int64_t src_idx = column_index + ne00*tgpig.x;
+        const float res = src0_ptr[src_idx];
 
-        dst_ptr[dst_idx] = src0_ptr[src_idx];
+        dst_ptr[dst_idx] = res;
     }
 }
 
