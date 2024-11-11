@@ -776,7 +776,7 @@ static bool ggml_metal_supports_op(const struct ggml_metal_context * ctx, const 
             return ctx->support_simdgroup_reduction;
         case GGML_OP_NORM:
         case GGML_OP_ROPE:
-        case GGML_OP_IM2COL:// return op->src[0]->type == GGML_TYPE_F16;
+        case GGML_OP_IM2COL:
             return true;
         case GGML_OP_POOL_1D:
         case GGML_OP_POOL_2D:
