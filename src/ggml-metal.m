@@ -2573,6 +2573,12 @@ static enum ggml_status ggml_metal_graph_compute(
 
                         id<MTLComputePipelineState> pipeline = ctx->kernels[GGML_METAL_KERNEL_TYPE_PAD_F32].pipeline;
 
+                        const int32_t * opts = (const int32_t *)dst->op_params;
+                        const int64_t p00 = opts[0];
+                        const int64_t p10 = opts[2];
+                        const int64_t p20 = opts[4];
+                        const int64_t p30 = opts[6];
+
                         [encoder setComputePipelineState:pipeline];
                         [encoder setBuffer:id_src0 offset:offs_src0 atIndex:0];
                         [encoder setBuffer:id_dst  offset:offs_dst  atIndex:1];
@@ -2592,6 +2598,10 @@ static enum ggml_status ggml_metal_graph_compute(
                         [encoder setBytes:&nb1  length:sizeof(nb1)  atIndex:15];
                         [encoder setBytes:&nb2  length:sizeof(nb2)  atIndex:16];
                         [encoder setBytes:&nb3  length:sizeof(nb3)  atIndex:17];
+                        [encoder setBytes:&p00  length:sizeof(p00)  atIndex:18];
+                        [encoder setBytes:&p10  length:sizeof(p10)  atIndex:19];
+                        [encoder setBytes:&p20  length:sizeof(p20)  atIndex:20];
+                        [encoder setBytes:&p30  length:sizeof(p30)  atIndex:21];
 
                         const int nth = MIN(1024, ne0);
 
