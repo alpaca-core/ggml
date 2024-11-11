@@ -1845,7 +1845,7 @@ typedef void (im2col_t)(
         uint3 tpitg[[thread_position_in_threadgroup]],
         uint3   ntg[[threads_per_threadgroup]]);
 
-template <typename T, typename S>
+template <typename S, typename D>
 kernel void kernel_im2col(
         device const char * x,
         device       char * dst,
@@ -1872,7 +1872,7 @@ kernel void kernel_im2col(
         (tgpig[0] * (ntg[1] * ntg[2]) + tpitg[1] * ntg[2] + tpitg[2]);
 
     device S * psrc = (device S *) (x);
-    device T * pdst = (device T *) (dst);
+    device D * pdst = (device D *) (dst);
 
     if (iih < 0 || iih >= IH || iiw < 0 || iiw >= IW) {
         pdst[offset_dst] = 0.0f;
@@ -1951,7 +1951,6 @@ kernel void kernel_conv_transpose_1d_f32(
     constant   int64_t & s0,
     constant   int64_t & p0,
     constant   int64_t & d0,
-    constant   int64_t & processed_ne0,
     uint3 tgpig[[threadgroup_position_in_grid]],
     uint3  tgpg[[threadgroups_per_grid]],
     uint3 tpitg[[thread_position_in_threadgroup]],
@@ -1963,15 +1962,15 @@ kernel void kernel_conv_transpose_1d_f32(
 
     for (int i0 = tpitg.x; i0 < ne0; i0 += ntg.x){
         float accumulator = 0.0;
-        int global_index = tpitg.x + tgpig.x * ntg.x + processed_ne0 * tgpg.x;
+        int global_index = i0 + ne0 * tgpig.x;
         int out_index = global_index / ne0;
 
-        for (int c = 0; c < ne02; ++c) {
+        for (int c = 0; c < ne02; c++) {
             int idx = global_index % ne0;
             int kernel_offset = (ne00 * ne01 * c) + (out_index * ne00);
             int input_offset = ne10 * c;
 
-            for (int i = 0; i < ne10; ++i) {
+            for (int i = 0; i < ne10; i++) {
                 if (!(idx >= i * s0 && idx < i * s0 + ne00)) {
                     continue;
                 }
@@ -2055,7 +2054,7 @@ kernel void kernel_unfold_1d_f32(
     device const float * src0_ptr = (device const float *) (src0);
     device       float * dst_ptr = (device        float *) (dst);
 
-    for (int i0 = tpitg.x; i0 < ne0; i0 += ntg.x){
+    for (int64_t i0 = tpitg.x; i0 < ne0; i0 += ntg.x){
         const int64_t src_idx = i3 *(ne00*ne01) + i2 * (ne00) + i1*s + i0;
         const int64_t dst_idx = i3*(ne0*ne1*ne2) + i2*(ne0*ne1) + i1*ne0 + i0;
 

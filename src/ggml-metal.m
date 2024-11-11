@@ -2458,6 +2458,8 @@ static enum ggml_status ggml_metal_graph_compute(
                         GGML_ASSERT(src0->type == GGML_TYPE_F32);
                         GGML_ASSERT(src1->type == GGML_TYPE_F32);
                         GGML_ASSERT( dst->type == GGML_TYPE_F32);
+                        GGML_ASSERT(ne2 == 1);
+                        GGML_ASSERT(ne3 == 1);
 
                         const id<MTLComputePipelineState> pipeline = ctx->kernels[GGML_METAL_KERNEL_TYPE_CONV_TRANSPOSE_1D_F32].pipeline;
 
@@ -2467,36 +2469,28 @@ static enum ggml_status ggml_metal_graph_compute(
                         const int64_t p0 = 0;
                         const int64_t d0 = 1;
 
-                        // The buffer might be big and cannot be taken with all threads at once,
-                        // so we'll process it in chunks.
-                        int64_t processed_ne0 = 0;
-                        while(ne0 > processed_ne0) {
-                            [encoder setBuffer:id_src0 offset:offs_src0 atIndex:0];
-                            [encoder setBuffer:id_src1 offset:offs_src1 atIndex:1];
-                            [encoder setBuffer:id_dst  offset:offs_dst  atIndex:2];
-                            [encoder setBytes:&ne00 length:sizeof(ne00) atIndex:3];
-                            [encoder setBytes:&ne01 length:sizeof(ne01) atIndex:4];
-                            [encoder setBytes:&ne02 length:sizeof(ne02) atIndex:5];
-                            [encoder setBytes:&ne03 length:sizeof(ne03) atIndex:6];
-                            [encoder setBytes:&ne10 length:sizeof(ne10) atIndex:7];
-                            [encoder setBytes:&ne11 length:sizeof(ne11) atIndex:8];
-                            [encoder setBytes:&ne12 length:sizeof(ne12) atIndex:9];
-                            [encoder setBytes:&ne13 length:sizeof(ne13) atIndex:10];
-                            [encoder setBytes:&ne0  length:sizeof(ne0)  atIndex:11];
-                            [encoder setBytes:&ne1  length:sizeof(ne1)  atIndex:12];
-                            [encoder setBytes:&ne2  length:sizeof(ne2)  atIndex:13];
-                            [encoder setBytes:&ne3  length:sizeof(ne3)  atIndex:14];
-                            [encoder setBytes:&s0  length:sizeof(s0)  atIndex:15];
-                            [encoder setBytes:&p0  length:sizeof(p0)  atIndex:16];
-                            [encoder setBytes:&d0  length:sizeof(d0)  atIndex:17];
-                            [encoder setBytes:&d0  length:sizeof(d0)  atIndex:17];
-                            [encoder setBytes:&processed_ne0  length:sizeof(processed_ne0)  atIndex:18];
+                        [encoder setBuffer:id_src0 offset:offs_src0 atIndex:0];
+                        [encoder setBuffer:id_src1 offset:offs_src1 atIndex:1];
+                        [encoder setBuffer:id_dst  offset:offs_dst  atIndex:2];
+                        [encoder setBytes:&ne00 length:sizeof(ne00) atIndex:3];
+                        [encoder setBytes:&ne01 length:sizeof(ne01) atIndex:4];
+                        [encoder setBytes:&ne02 length:sizeof(ne02) atIndex:5];
+                        [encoder setBytes:&ne03 length:sizeof(ne03) atIndex:6];
+                        [encoder setBytes:&ne10 length:sizeof(ne10) atIndex:7];
+                        [encoder setBytes:&ne11 length:sizeof(ne11) atIndex:8];
+                        [encoder setBytes:&ne12 length:sizeof(ne12) atIndex:9];
+                        [encoder setBytes:&ne13 length:sizeof(ne13) atIndex:10];
+                        [encoder setBytes:&ne0  length:sizeof(ne0)  atIndex:11];
+                        [encoder setBytes:&ne1  length:sizeof(ne1)  atIndex:12];
+                        [encoder setBytes:&ne2  length:sizeof(ne2)  atIndex:13];
+                        [encoder setBytes:&ne3  length:sizeof(ne3)  atIndex:14];
+                        [encoder setBytes:&s0  length:sizeof(s0)  atIndex:15];
+                        [encoder setBytes:&p0  length:sizeof(p0)  atIndex:16];
+                        [encoder setBytes:&d0  length:sizeof(d0)  atIndex:17];
+                        [encoder setBytes:&d0  length:sizeof(d0)  atIndex:17];
 
-                            const int nth = MIN((int)pipeline.maxTotalThreadsPerThreadgroup, ne0 - processed_ne0);
-
-                            [encoder dispatchThreadgroups:MTLSizeMake(ne1, ne2, ne3) threadsPerThreadgroup:MTLSizeMake(nth, 1, 1)];
-                            processed_ne0 += nth;
-                        }
+                        const int nth = MIN((int)pipeline.maxTotalThreadsPerThreadgroup, ne0);
+                        [encoder dispatchThreadgroups:MTLSizeMake(ne1, 1, 1) threadsPerThreadgroup:MTLSizeMake(nth, 1, 1)];
                     } break;
                 case GGML_OP_UNFOLD_1D:
                     {
@@ -2533,8 +2527,7 @@ static enum ggml_status ggml_metal_graph_compute(
 
                         const int nth = MIN((int) pipeline.maxTotalThreadsPerThreadgroup, ne0);
                         [encoder dispatchThreadgroups:MTLSizeMake(ne1, ne2, ne3) threadsPerThreadgroup:MTLSizeMake(nth, 1, 1)];
-                        break;
-                    }
+                    } break;
                 case GGML_OP_UPSCALE:
                     {
                         GGML_ASSERT(src0->type == GGML_TYPE_F32);
