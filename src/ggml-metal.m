@@ -2594,14 +2594,10 @@ static enum ggml_status ggml_metal_graph_compute(
                         [encoder setBytes:&ne1  length:sizeof(ne1)  atIndex:11];
                         [encoder setBytes:&ne2  length:sizeof(ne2)  atIndex:12];
                         [encoder setBytes:&ne3  length:sizeof(ne3)  atIndex:13];
-                        [encoder setBytes:&nb0  length:sizeof(nb0)  atIndex:14];
-                        [encoder setBytes:&nb1  length:sizeof(nb1)  atIndex:15];
-                        [encoder setBytes:&nb2  length:sizeof(nb2)  atIndex:16];
-                        [encoder setBytes:&nb3  length:sizeof(nb3)  atIndex:17];
-                        [encoder setBytes:&p00  length:sizeof(p00)  atIndex:18];
-                        [encoder setBytes:&p10  length:sizeof(p10)  atIndex:19];
-                        [encoder setBytes:&p20  length:sizeof(p20)  atIndex:20];
-                        [encoder setBytes:&p30  length:sizeof(p30)  atIndex:21];
+                        [encoder setBytes:&p00  length:sizeof(p00)  atIndex:14];
+                        [encoder setBytes:&p10  length:sizeof(p10)  atIndex:15];
+                        [encoder setBytes:&p20  length:sizeof(p20)  atIndex:16];
+                        [encoder setBytes:&p30  length:sizeof(p30)  atIndex:17];
 
                         const int nth = MIN(1024, ne0);
 
